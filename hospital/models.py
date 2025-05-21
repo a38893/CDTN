@@ -3,47 +3,7 @@ from django.db import models
 from django.utils import timezone
 from datetime import date, time
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-# class User(models.Model):
-#     ROLE_CHOICES = [
-#         ('admin', 'Admin'),
-#         ('receptionist', 'Receptionist'),
-#         ('doctor', 'Doctor'),
-#         ('patient', 'Patient'),
-#     ]
-#     GENDER_CHOICES = [
-#         ('male', 'Male'),
-#         ('female', 'Female'),
-#         ('other', 'Other'),
-#     ]
-#     STATUS_CHOICES = [
-#         ('active', 'Active'),
-#         ('inactive', 'Inactive'),
-#     ]
-#     user_id = models.IntegerField(unique=True, null=False, blank=False, editable=False) 
-#     username = models.CharField(max_length=50, unique=True)
-#     password = models.CharField(max_length=50)
-#     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='patient')  
-#     status = models.CharField(max_length=20, default='active',choices= STATUS_CHOICES)
-#     full_name = models.CharField(max_length=100)
-#     gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
-#     address = models.TextField()
-#     birth_day = models.DateField()
-#     phone = models.CharField(max_length=10)
-#     specialty = models.CharField(max_length=50, blank=True, null=True) 
-#     degree = models.CharField(max_length=50, blank=True, null=True)  
-#     notes = models.TextField(blank=True, null=True)
 
-#     def save(self, *args, **kwargs):
-#         if not self.user_id:  
-#             last_user = User.objects.order_by('-user_id').first()
-#             self.user_id = (last_user.user_id + 1) if last_user else 1 
-#         super().save(*args, **kwargs)
-
-#     def __str__(self):
-#         return self.username
-
-#     class Meta:
-#         db_table = 'user' 
 
 class UserManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -66,7 +26,7 @@ class User(AbstractBaseUser):
         ('doctor', 'Doctor'),
         ('patient', 'Patient'),
     ]
-    user_id = models.IntegerField(unique=True, null=False, blank=False, editable=False)
+    user_id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=50, unique=True)
     password = models.CharField(max_length=128)  # Tăng độ dài cho mật khẩu mã hóa
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='patient')
@@ -85,11 +45,6 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['full_name', 'gender', 'address', 'birth_day', 'phone']
 
-    def save(self, *args, **kwargs):
-        if not self.user_id:
-            last_user = User.objects.order_by('-user_id').first()
-            self.user_id = (last_user.user_id + 1) if last_user else 1
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username
@@ -113,12 +68,13 @@ class User(AbstractBaseUser):
 
 # Appointment model
 class Appointment(models.Model):
+    # appointment_id = models.IntegerField(primary_key=True, null=False, blank=False, editable=False)
     patient_user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='patient_appointments')
     doctor_user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='doctor_appointments')
     appointment_day = models.DateField(default=date.today)  # chỉ lấy ngày
     appointment_time = models.TimeField(default=time(12, 0))
     appointment_status = models.CharField(max_length=20, default='scheduled')
-
+    description = models.TextField(blank=True, null=True)
     def __str__(self):
         return f"Appointment {self.id} - {self.patient.full_name} with {self.doctor.full_name}"
 

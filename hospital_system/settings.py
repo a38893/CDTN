@@ -75,6 +75,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
+   
 }
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
@@ -82,6 +83,8 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
     'UPDATE_LAST_LOGIN': False,
+    'USER_ID_FIELD': 'user_id',  
+    'USER_ID_CLAIM': 'user_id',
 }
 WSGI_APPLICATION = 'hospital_system.wsgi.application'
 
@@ -91,9 +94,12 @@ WSGI_APPLICATION = 'hospital_system.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mydb',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
+        'HOST': 'localhost',  
+        'PORT': '5432', 
     }
 }
 

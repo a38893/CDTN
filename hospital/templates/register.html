@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký</title>
+</head>
+<body>
+    <div>
+        <h2>Đăng ký tài khoản</h2>
+        <div>
+            <label for="username">Tên đăng nhập:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">Mật khẩu:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div>
+            <label for="full_name">Họ và tên:</label>
+            <input type="text" id="full_name" name="full_name" required>
+        </div>
+        <div>
+            <label for="gender">Giới tính:</label>
+            <select id="gender" name="gender">
+                <option value="male">Nam</option>
+                <option value="female">Nữ</option>
+                <option value="other">Khác</option>
+            </select>
+        </div>
+        <div>
+            <label for="phone">Số điện thoại:</label>
+            <input type="tel" id="phone" name="phone" required>
+        </div>
+        <div>
+            <label for="address">Địa chỉ:</label>
+            <input type="text" id="address" name="address" required>
+        </div>
+        <div>
+            <label for="birth_day">Ngày sinh (YYYY-MM-DD):</label>
+            <input type="date" id="birth_day" name="birth_day" required>
+        </div>
+        <button type="button" onclick="register()">Đăng ký</button>
+        <div id="message"></div>
+        <div>
+            <p>Đã có tài khoản? <a href="/login/">Đăng nhập</a></p>
+        </div>
+    </div>
+
+    <script>
+        function register() {
+            // Lấy dữ liệu từ form
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const full_name = document.getElementById('full_name').value;
+            const gender = document.getElementById('gender').value;
+            const phone = document.getElementById('phone').value;
+            const address = document.getElementById('address').value;
+            const birth_day = document.getElementById('birth_day').value;
+            
+            // Kiểm tra dữ liệu
+            if (!username || !password || !full_name || !phone || !address || !birth_day) {
+                document.getElementById('message').innerText = 'Vui lòng điền đầy đủ thông tin';
+                return;
+            }
+            
+            // Gửi request đến API
+            fetch('/api/register/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                    full_name: full_name,
+                    gender: gender,
+                    phone: phone,
+                    address: address,
+                    birth_day: birth_day
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "Đăng ký thành công!") {
+                    document.getElementById('message').innerText = data.message;
+                    
+                    // Chuyển hướng đến trang đăng nhập sau 2 giây
+                    setTimeout(() => {
+                        window.location.href = '/login/';
+                    }, 2000);
+                } else {
+                    // Xử lý lỗi
+                    let errorMessage = '';
+                    if (typeof data === 'object' && data !== null) {
+                        // Trường hợp có lỗi validation chi tiết
+                        for (const [key, value] of Object.entries(data)) {
+                            errorMessage += `${key}: ${value}\n`;
+                        }
+                    } else {
+                        errorMessage = data.message || 'Đăng ký thất bại';
+                    }
+                    document.getElementById('message').innerText = errorMessage;
+                }
+            })
+            .catch(error => {
+                document.getElementById('message').innerText = 'Có lỗi xảy ra: ' + error;
+            });
+        }
+
+        // Hàm lấy CSRF token từ cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

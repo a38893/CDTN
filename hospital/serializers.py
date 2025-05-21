@@ -1,4 +1,5 @@
-import datetime
+from django.utils import timezone
+from datetime import time
 from rest_framework import serializers
 from .models import User,Appointment
 from django.contrib.auth.hashers import make_password
@@ -7,9 +8,9 @@ from django.contrib.auth.hashers import make_password
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['user_id', 'username', 'full_name', 'gender', 'phone', 'address', 'birth_day']
+        fields = ['user_id', 'full_name', 'username',  'gender', 'phone', 'address', 'birth_day']
         read_only_fields = ['user_id']
-
+# 'username', 'full_name', 'gender', 'phone', 'address', 'birth_day'
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -42,14 +43,52 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
 
-class RegisterAppointmentSerializer(serializers.ModelSerializer):
+class AppointmentSerializer(serializers.Serializer):
+    date = serializers.DateField(required=True)
+    time = serializers.TimeField(required=True)
+    doctor_user_id = serializers.IntegerField(required=True)
+    description = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate_date(self, value):
+        """
+        Kiểm tra ngày hẹn không được là ngày trong quá khứ
+        """
+        today = timezone.now().date()
+        if value < today:
+            raise serializers.ValidationError("Ngày hẹn không thể là ngày trong quá khứ!")
+        return value
+    
+    def validate_time(self, value):
+        """
+        Kiểm tra giờ hẹn phải trong giờ làm việc (8:00 - 17:00)
+        """
+        # Chuyển đổi thành datetime.time để so sánh
+        start_time = time(8, 0)  # 8:00 AM
+        end_time = time(17, 0)   # 5:00 PM
+        
+        if value < start_time or value > end_time:
+            raise serializers.ValidationError("Giờ hẹn phải trong khoảng 8:00 - 17:00!")
+        return value
+    
+    def validate(self, data):
+        """
+        Kiểm tra nếu ngày hẹn là hôm nay, giờ hẹn phải là tương lai
+        """
+        date = data.get('date')
+        appointment_time = data.get('time')
+        
+        if date == timezone.now().date():
+            current_time = timezone.now().time()
+            if appointment_time <= current_time:
+                raise serializers.ValidationError({"time": "Giờ hẹn phải là thời gian trong tương lai!"})
+        
+        return data
+
+class AppointmentHistoryViewSerializer(serializers.ModelSerializer):
+    patient = UserSerializer(source='patient_user_id', read_only = True)
+    doctor = UserSerializer(source='doctor_user_id', read_only = True)
+
     class Meta:
         model = Appointment
-        fields = '__all__'
-
-
-class AppointmentSerializer(serializers.Serializer):
-      date = serializers.DateField()
-      time = serializers.TimeField()
-      doctor_user_id = serializers.IntegerField()
-      description = serializers.CharField(max_length=500, required=False, allow_blank=True)
+        fields = ['id', 'patient', 'doctor', 'appointment_day', 'appointment_time', 'appointment_status', 'description']
+        

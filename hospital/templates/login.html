@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập</title>
+</head>
+<body>
+    <div>
+        <h2>Đăng nhập</h2>
+        <div>
+            <label for="username">Tên đăng nhập:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">Mật khẩu:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="button" onclick="login()">Đăng nhập</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                document.getElementById('message').innerText = 'Vui lòng điền đầy đủ thông tin';
+                return;
+            }
+            
+            fetch('/api/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "Đăng nhập thành công!") {
+                    document.getElementById('message').innerText = data.message;
+                    
+                    // Lưu token vào localStorage
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('refresh_token', data.refresh_token);
+                    localStorage.setItem('user_data', JSON.stringify(data.user));
+                    
+                    // Chuyển hướng sau 1 giây
+                    setTimeout(() => {
+                        window.location.href = '/appointment_history/';
+                    }, 1000);
+                } else {
+                    document.getElementById('message').innerText = data.message || 'Đăng nhập thất bại';
+                }
+            })
+            .catch(error => {
+                document.getElementById('message').innerText = 'Có lỗi xảy ra: ' + error;
+            });
+        }
+
+        // Hàm lấy CSRF token từ cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
