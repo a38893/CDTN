@@ -53,6 +53,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'hieunguyenclaude1@gmail.com'         
+EMAIL_HOST_PASSWORD = 'svgr qabp ktyb gmqn'       
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+
 ROOT_URLCONF = 'hospital_system.urls'
 AUTH_USER_MODEL = 'hospital.User'
 TEMPLATES = [
@@ -95,7 +105,7 @@ WSGI_APPLICATION = 'hospital_system.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mydb',
+        'NAME': 'csdl',
         'USER': 'postgres',
         'PASSWORD': '1234',
         'HOST': 'localhost',  
@@ -143,3 +153,8 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+VNPAY_RETURN_URL = 'http://localhost:8000/appointment'  # get from config
+VNPAY_PAYMENT_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'  # get from config
+VNPAY_API_URL = 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction'
+VNPAY_TMN_CODE = 'WOEINPH7'  # Website ID in VNPAY System, get from config
+VNPAY_HASH_SECRET_KEY = '0CWEA83X5RQYVR9J31HRB7Y61FMGZQQO'  # Secret key for create checksum,get from config

@@ -1,7 +1,8 @@
+import datetime
 from django.utils import timezone
 from datetime import time
 from rest_framework import serializers
-from .models import User,Appointment
+from .models import PatientTest, User,Appointment, MedicalRecord
 from django.contrib.auth.hashers import make_password
 
 
@@ -10,6 +11,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['user_id', 'full_name', 'username',  'gender', 'phone', 'address', 'birth_day']
         read_only_fields = ['user_id']
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'is_superuser': {'default': False}  
+        }
 # 'username', 'full_name', 'gender', 'phone', 'address', 'birth_day'
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -17,7 +22,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'password', 'full_name', 'gender', 'phone', 'address', 'birth_day']
+        fields = ['username', 'password', 'full_name', 'gender', 'phone', 'address', 'birth_day', 'gmail']
 
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
@@ -29,14 +34,20 @@ class RegisterSerializer(serializers.ModelSerializer):
             try:
                 value = datetime.strptime(value, '%Y-%m-%d').date()
             except ValueError:
-                raise serializers.ValidationError("Ngày sinh phải có định dạng YYYY-MM-DD!")
+                raise serializers.ValidationError("Ngày sinh phải có định dạng YYYY-MM-DD!(ví dụ: 2023-10-01: Ngày 01 tháng 10 năm 2023)")
+        if not isinstance(value, datetime.date):
+            raise serializers.ValidationError("Ngày sinh phải là một ngày hợp lệ!")
+        if value.year < 1900:
+            raise serializers.ValidationError("Ngày sinh không thể trước năm 1900!")
+        if value > datetime.date.today():
+            raise serializers.ValidationError("Ngày sinh không thể là ngày trong tương lai!")
         if value > datetime.datetime.now().date():
             raise serializers.ValidationError("Ngày sinh không thể là tương lai!")
         return value
 
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])
-        validated_data['status'] = 'active'
+        validated_data['status'] = False
         return User.objects.create(**validated_data)
 
 class LoginSerializer(serializers.Serializer):
@@ -90,5 +101,19 @@ class AppointmentHistoryViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ['id', 'patient', 'doctor', 'appointment_day', 'appointment_time', 'appointment_status', 'description']
+        fields = ['appointment_id', 'patient', 'doctor', 'appointment_day', 'appointment_time', 'appointment_status', 'description']
         
+class PatientTestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientTest
+        fields = [ 'test_name', 'test_result', 'test_note']
+
+
+class MedicalRecordSerializer(serializers.ModelSerializer):
+    appointment_day = serializers.DateField(source='appointment.appointment_day', read_only=True)
+    doctor_name= serializers.CharField(source='doctor_user_id.full_name', read_only=True)
+    tests = PatientTestSerializer(many=True, read_only=True, source='patient_tests')
+    class Meta:
+        model = MedicalRecord
+        fields =['record_id', 'appointment_day', 'doctor_name','record_status', 'diagnosis', 'treatment', 'result', 'record_note'
+                  , 'tests']    
