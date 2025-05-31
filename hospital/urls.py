@@ -1,8 +1,15 @@
 from hospital import views
 from django.urls import include, path
-from .views import AppointmentAPI, RegisterAPI, LoginAPI,  TestAuth, home, login_page, register_page, appointment_page, AppointmentHistoryViewAPI, appointment_history, MedicalRecordHistoryViewAPI, VerifyOTP, ResendOTP, ChangePasswordAPI, ResetPasswordAPI
 from rest_framework.routers import DefaultRouter
-
+from hospital.api.register import RegisterAPI, register_page
+from hospital.api.login import LoginAPI, login_page
+from hospital.api.appointment_register import AppointmentAPI, appointment_page
+from hospital.api.appointment_view_history import appointment_history
+from hospital.api.medical_record_view_history import MedicalRecordHistoryViewAPI
+from hospital.api.verify_otp import VerifyOTP
+from hospital.api.resend_otp import ResendOTP
+from hospital.api.change_password import ChangePasswordAPI
+from hospital.api.reset_password import ResetPasswordAPI
 router = DefaultRouter()
 router.register(r'appointments', views.AppointmentHistoryViewAPI, basename='appointment'),
 router.register(r'medical-records', MedicalRecordHistoryViewAPI, basename='medical-record')
@@ -11,7 +18,6 @@ urlpatterns = [
     path('api/register/', RegisterAPI.as_view(), name='register_api'),
     path('api/login/', LoginAPI.as_view(), name='login_api'),
     path('api/appointmentregister/', AppointmentAPI.as_view(), name='appointment_api'),
-    path('api/TestAuth/',TestAuth.as_view(), name = 'test_auth'),
     path('login/', login_page, name='login-page'),
     path('register/', register_page, name='register-page'),
     path('appointment/', appointment_page, name='appointment-page'),

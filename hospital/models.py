@@ -55,10 +55,10 @@ class User(AbstractBaseUser):
         return self.username
 
     def has_perm(self, perm, obj=None):
-        return self.role == 'admin'
+        return True
 
     def has_module_perms(self, app_label):
-        return self.role == 'admin'
+        return self.role in ['admin', 'receptionist', 'doctor']
 
     @property
     def is_superuser(self):
@@ -135,18 +135,6 @@ class LabTest(models.Model):
     class Meta:
         db_table = 'lab_test'
 
-class Prescription(models.Model):
-    prescription_id = models.AutoField(primary_key=True)
-    record = models.ForeignKey(MedicalRecord, on_delete=models.CASCADE, related_name='prescriptions')
-    prescription_date = models.DateField()
-    doctor_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='prescriptions')
-    prescription_note = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return f"Prescription {self.prescription_id}"
-
-    class Meta:
-        db_table = 'prescriptions'
 
 class Medication(models.Model):
     medication_id = models.AutoField(primary_key=True)
@@ -165,10 +153,10 @@ class Medication(models.Model):
     class Meta:
         db_table = 'medications'
 
-class PrescriptionDetail(models.Model):
-    detail_id = models.AutoField(primary_key=True)
-    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name='prescription_details')
-    medication = models.ForeignKey(Medication, on_delete=models.CASCADE, related_name='prescription_details')
+class Prescription(models.Model):
+    prescription_id = models.AutoField(primary_key=True)  # Đúng tên, không phải presciption_id
+    record = models.ForeignKey(MedicalRecord, on_delete=models.CASCADE, related_name='prescriptions')
+    medication = models.ForeignKey(Medication, on_delete=models.CASCADE, related_name='prescriptions')
     duration = models.CharField(max_length=50)
     dosage = models.CharField(max_length=50)
     quantity = models.IntegerField()
@@ -176,37 +164,39 @@ class PrescriptionDetail(models.Model):
     frequency = models.CharField(max_length=50)
 
     def __str__(self):
-        return f"Prescription Detail {self.detail_id}"
+        return f"Prescription {self.prescription_id}"
 
     class Meta:
-        db_table = 'prescription_details'
-
+        db_table = 'prescription'
 class Payment(models.Model):
     payment_id = models.AutoField(primary_key=True)
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='payments')
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_timestamp = models.DateTimeField()
-    payment_method = models.CharField(max_length=50)
-    payment_status = models.CharField(max_length=20)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[('unpaid', 'Unpaid'), ('paid', 'Paid')],
+        default='unpaid'
+    )
+    payment_method = models.CharField(max_length=50, blank=True, null=True)
+    payment_timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Payment {self.payment_id}"
+        return f"Hóa đơn #{self.payment_id} - {self.get_payment_status_display()}"
 
     class Meta:
         db_table = 'payments'
 
+
 class PaymentDetail(models.Model):
-    payment_detail_id = models.AutoField(primary_key=True)
-    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='payment_details')
-    item_type = models.CharField(max_length=50)
-    item_id = models.IntegerField()
-    description = models.TextField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    quantity = models.IntegerField()
-    discount = models.DecimalField(max_digits=10, decimal_places=2)
+    detail_id = models.AutoField(primary_key=True)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='details')
+    service_type = models.CharField(max_length=50)  # 'test', 'prescription', 'consultation', ...
+    service_id = models.IntegerField()              # ID của dịch vụ (ví dụ: PatientTest.id, Prescription.id)
+    service_name = models.CharField(max_length=255) # Tên dịch vụ (ví dụ: 'Xét nghiệm Ferritin')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
-        return f"Payment Detail {self.payment_detail_id}"
+        return f"{self.service_name} ({self.amount})"
 
     class Meta:
         db_table = 'payment_details'
