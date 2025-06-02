@@ -2,7 +2,7 @@ import datetime
 from django.utils import timezone
 from datetime import time
 from rest_framework import serializers
-from .models import PatientTest, User,Appointment, MedicalRecord
+from .models import PatientTest, Prescription, User,Appointment, MedicalRecord
 from django.contrib.auth.hashers import make_password
 
 
@@ -108,6 +108,10 @@ class PatientTestSerializer(serializers.ModelSerializer):
         model = PatientTest
         fields = [ 'test_name', 'test_result', 'test_note']
 
+class PrescriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prescription
+        fields = '__all__ '
 
 class MedicalRecordSerializer(serializers.ModelSerializer):
     appointment_day = serializers.DateField(source='appointment.appointment_day', read_only=True)

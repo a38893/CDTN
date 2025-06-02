@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib import admin
 from .models import Appointment, AbstractBaseUser, UserManager, LabTest, Medication, MedicalRecord, Payment, PatientTest,PaymentDetail, User, Prescription
 from django import forms
+from django.contrib.auth.hashers import make_password
+
 # # Register your models here.
 # admin.site.register(Appointment)
 # admin.site.register(PrescriptionDetail)
@@ -47,7 +49,7 @@ class UserAdminForm(forms.ModelForm):
         model = User
         fields = '__all__'
 
-    def clead_role(self):
+    def clean_role(self):
         role = self.cleaned_data.get('role')
         user = self.current_user
 
@@ -60,6 +62,7 @@ class UserAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
 class UsersAdmin(admin.ModelAdmin):
+    form = UserAdminForm
     list_display = ('user_id', 'username', 'role', 'full_name', 'phone','gmail')
     search_fields= ('username','full_name', 'phone', 'gmail','user_id')
     list_filter = ('role',)
@@ -70,7 +73,14 @@ class UsersAdmin(admin.ModelAdmin):
                 kwargs2['current_user'] = request.user
                 return form(*args, **kwargs2)
         return CustomForm
+    def save_model(self, request, obj, form, change):
+        # Nếu mật khẩu vừa nhập khác với mật khẩu đã hash (hoặc là mật khẩu mới)
+        raw_password = form.cleaned_data.get('password')
+        if raw_password and not raw_password.startswith('pbkdf2_'):
+            obj.password = make_password(raw_password)
+        super().save_model(request, obj, form, change)
     
+
     def has_view_permission(self, request, obj=None):
         return request.user.role in ['admin', 'receptionist']
 
