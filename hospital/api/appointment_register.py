@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from hospital.models import Appointment, User
+from hospital.models import Appointment, Payment, User
 from hospital.serializers import AppointmentSerializer
 
 
@@ -17,7 +17,7 @@ class AppointmentAPI(APIView):
     def get(self, request):
         """Lấy danh sách bác sĩ cho dropdown chọn"""
         # Lấy tất cả bác sĩ có trạng thái active
-        doctors = User.objects.filter(role='doctor', status='active')
+        doctors = User.objects.filter(role='doctor', status=True)
         
         # Tạo danh sách bác sĩ với thông tin cần thiết
         doctor_list = []
@@ -45,7 +45,7 @@ class AppointmentAPI(APIView):
             
             try:
                 # Kiểm tra bác sĩ tồn tại và có trạng thái active
-                doctor = User.objects.get(user_id=doctor_user_id, role='doctor', status='active')
+                doctor = User.objects.get(user_id=doctor_user_id, role='doctor', status=True)
                 
                 # Kiểm tra xem bác sĩ có lịch trùng không
                 existing_appointment = Appointment.objects.filter(
@@ -68,12 +68,12 @@ class AppointmentAPI(APIView):
                     appointment_time=time,
                     description=description
                 )
-                # Payment.objects.create(
-                #     appointment=appointment,
-                #     amount=30000,
-                #     payment_status='pending',  
-                #     # payment_method='bank_transfer'  # Phương thức thanh toán mặc định
-                # )
+                Payment.objects.create(
+                    appointment=appointment,
+                    total_amount=30000,
+                    payment_status='pending',  
+                    # payment_method='bank_transfer'  # Phương thức thanh toán mặc định
+                )
                 
                 return Response({
                     "message": "Đăng ký lịch hẹn thành công!",

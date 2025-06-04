@@ -1,3 +1,4 @@
+import random
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from datetime import date, time
@@ -168,6 +169,7 @@ class Prescription(models.Model):
 
     class Meta:
         db_table = 'prescription'
+        
 class Payment(models.Model):
     payment_id = models.AutoField(primary_key=True)
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='payments')
@@ -177,9 +179,17 @@ class Payment(models.Model):
         choices=[('unpaid', 'Unpaid'), ('paid', 'Paid')],
         default='unpaid'
     )
+    order_code = models.CharField(max_length=50, unique=True) 
     payment_method = models.CharField(max_length=50, blank=True, null=True)
     payment_timestamp = models.DateTimeField(auto_now_add=True)
-
+    def save(self, *args, **kwargs):
+        if not self.order_code:
+            while True:
+                code = f"ORD{random.randint(100000, 999999)}"
+                if not Payment.objects.filter(order_code=code).exists():
+                    self.order_code = code
+                    break
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"Hóa đơn #{self.payment_id} - {self.get_payment_status_display()}"
 
@@ -194,7 +204,12 @@ class PaymentDetail(models.Model):
     service_id = models.IntegerField()              # ID của dịch vụ (ví dụ: PatientTest.id, Prescription.id)
     service_name = models.CharField(max_length=255) # Tên dịch vụ (ví dụ: 'Xét nghiệm Ferritin')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-
+    detail_status = models.CharField(
+        max_length=20,
+        choices=[('unpaid', 'Chưa thanh toán'), ('paid', 'Đã thanh toán')],
+        default='unpaid'
+    ) 
+    detail_method = models.CharField(max_length=50, blank=True, null=True)
     def __str__(self):
         return f"{self.service_name} ({self.amount})"
 

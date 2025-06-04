@@ -11,9 +11,9 @@ from rest_framework import status
 
 class ResendOTP(APIView):
     def post(self, request):
-        user_id = request.data.get('user_id')
+        gmail = request.data.get('gmail')
         try:
-            user = User.objects.get(user_id=user_id)
+            user = User.objects.get(gmail=gmail)
             # Sinh OTP mới
             otp = gen_otp()
             otp_obj, created = OtpUsers.objects.get_or_create(user=user)

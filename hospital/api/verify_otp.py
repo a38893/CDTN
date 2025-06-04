@@ -10,20 +10,21 @@ from rest_framework import status
 
 
 
+from datetime import timedelta
+
 class VerifyOTP(APIView):
     def post(self, request):
-        user_id = request.data.get('user_id')
+        gmail = request.data.get('gmail')
         otp = request.data.get('otp')
         try:
-            user = User.objects.get(user_id=user_id)
-            if (OtpUsers.otp_code == otp and
-                 OtpUsers.otp_created_at and 
-                 timezone.now() - OtpUsers.otp_created_at < timezone.timedelta(minutes=5)
-                 ):
-                user.status= True
-                OtpUsers.is_phone_verified = True
-                OtpUsers.otp_code = None
-                OtpUsers.save()
+            user = User.objects.get(gmail=gmail)
+            otp_obj = OtpUsers.objects.filter(user=user, otp_code=otp).order_by('-otp_created_at').first()
+            if otp_obj and otp_obj.otp_created_at and timezone.now() - otp_obj.otp_created_at < timedelta(minutes=5):
+                user.status = True
+                user.save()
+                otp_obj.is_phone_verified = True
+                otp_obj.otp_code = None
+                otp_obj.save()
                 return Response({"message": "Xác thực thành công!"}, status=status.HTTP_200_OK)
             return Response({"message": "Mã OTP không hợp lệ hoặc đã hết hạn!"}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:

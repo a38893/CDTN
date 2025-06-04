@@ -103,9 +103,19 @@ class PrescriptionInline(admin.TabularInline):
     model = Prescription
     extra = 1
 
+class MedicalRecordForm(forms.ModelForm):
+    class Meta:
+        model = MedicalRecord
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Chỉ hiển thị appointment đã confirmed
+        self.fields['appointment'].queryset = Appointment.objects.filter(appointment_status='confirmed')
+
 @admin.register(MedicalRecord)
 class MedicalRecordAdmin(admin.ModelAdmin):
-
+    form = MedicalRecordForm
     list_display = ('record_id', 'appointment', 'record_status', 'diagnosis', 'treatment', 'result')
     search_fields = ('record_id', 'appointment__appointment_id', 'diagnosis')
     inlines = [PatientTestInline, PrescriptionInline]

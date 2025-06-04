@@ -104,20 +104,29 @@ class AppointmentHistoryViewSerializer(serializers.ModelSerializer):
         fields = ['appointment_id', 'patient', 'doctor', 'appointment_day', 'appointment_time', 'appointment_status', 'description']
         
 class PatientTestSerializer(serializers.ModelSerializer):
+    test_name = serializers.CharField(source='test.test_name', read_only=True)
+    test_id = serializers.IntegerField(source='test.test_id', read_only=True)
+
     class Meta:
         model = PatientTest
-        fields = [ 'test_name', 'test_result', 'test_note']
-
+        fields = ['patient_test_id', 'test_id', 'test_name', 'result', 'test_date', 'status']
 class PrescriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Prescription
-        fields = '__all__ '
+        fields = '__all__'
 
-class MedicalRecordSerializer(serializers.ModelSerializer):
-    appointment_day = serializers.DateField(source='appointment.appointment_day', read_only=True)
-    doctor_name= serializers.CharField(source='doctor_user_id.full_name', read_only=True)
-    tests = PatientTestSerializer(many=True, read_only=True, source='patient_tests')
+class MedicalRecordListSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalRecord
-        fields =['record_id', 'appointment_day', 'doctor_name','record_status', 'diagnosis', 'treatment', 'result', 'record_note'
-                  , 'tests']    
+        fields = ['record_id', 'appointment', 'diagnosis', 'treatment', 'result', 'record_note']
+
+class MedicalRecordDetailSerializer(serializers.ModelSerializer):
+    patient_tests = PatientTestSerializer(many=True, read_only=True)
+    prescriptions = PrescriptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = MedicalRecord
+        fields = [
+            'record_id', 'appointment', 'diagnosis', 'treatment', 'result', 'record_note',
+            'patient_tests', 'prescriptions'
+        ]
