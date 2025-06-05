@@ -34,8 +34,19 @@ def payment(request, payment_id=None):
                 "error": "Không tìm thấy hóa đơn cần thanh toán."
             })
         try:
-            payment = Payment.objects.get(pk=payment_id, payment_status='unpaid')
+            payment = Payment.objects.get(pk=payment_id, payment_status__in=['unpaid', 'pending'])
             appointment = payment.appointment
+            
+            # Nếu là đặt cọc và chưa có PaymentDetail thì tạo mới
+            if payment.payment_type == 'deposit' and not payment.details.exists():
+                PaymentDetail.objects.create(
+                    payment=payment,
+                    service_type='deposit',
+                    service_id=0,
+                    service_name='Đặt cọc lịch hẹn',
+                    amount=30000,
+                    detail_status='unpaid'
+                )
         except Payment.DoesNotExist:
             return render(request, "payment/payment.html", {
                 "title": "Thanh toán",
@@ -56,9 +67,24 @@ def payment(request, payment_id=None):
         payment_id = request.POST.get('payment_id')
 
         try:
-            payment = Payment.objects.get(pk=payment_id, payment_status='unpaid')
+            payment = Payment.objects.get(pk=payment_id, payment_status__in=['unpaid', 'pending'])
             appointment = payment.appointment
+            # Nếu là đặt cọc và chưa có PaymentDetail thì tạo mới
+            if payment.payment_type == 'deposit' and not payment.details.exists():
+                try:
+                    PaymentDetail.objects.create(
+                        payment=payment,
+                        service_type='deposit',
+                        service_id=0,
+                        service_name='Đặt cọc lịch hẹn',
+                        amount=30000,
+                        detail_status='unpaid'
+                    )
+                    print("Đã tạo PaymentDetail cho đặt cọc")
+                except Exception as e:
+                    print("Lỗi tạo PaymentDetail:", e)
         except Payment.DoesNotExist:
+            print("Lỗi tạo paymentdetail:", payment_id)
             return render(request, "payment/payment.html", {
                 "title": "Thanh toán",
                 "error": "Không có hóa đơn chưa thanh toán với mã này."
