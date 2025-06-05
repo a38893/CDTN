@@ -26,78 +26,47 @@ def hmacsha512(key, data):
     byteData = data.encode('utf-8')
     return hmac.new(byteKey, byteData, hashlib.sha512).hexdigest()
 
-def payment(request, appointment_id=None):
+def payment(request, payment_id=None):
     if request.method == 'GET':
-        if not appointment_id:
-            print("Không cung cấp appointment_id")
+        if not payment_id:
             return render(request, "payment/payment.html", {
                 "title": "Thanh toán",
-                "error": "Không tìm thấy lịch hẹn."
+                "error": "Không tìm thấy hóa đơn cần thanh toán."
             })
         try:
-            appointment = Appointment.objects.get(pk=appointment_id)
-            print(f"Đã tìm thấy lịch hẹn: {appointment.appointment_id}")
-            if not appointment.appointment_id:
-                print("ID lịch hẹn là None")
-                return render(request, "payment/payment.html", {
-                    "title": "Thanh toán",
-                    "error": "ID lịch hẹn không hợp lệ."
-                })
-            # Kiểm tra xem Payment đã tồn tại chưa
-            payment = Payment.objects.filter(appointment=appointment).first()
-            if not payment:
-                # Tạo Payment nếu chưa tồn tại
-                payment = Payment.objects.create(
-                    appointment=appointment,
-                    total_amount=100000,  # Giá trị mặc định, bạn có thể thay đổi
-                    payment_status='unpaid'
-                )
-        except Appointment.DoesNotExist:
-            print(f"Không tìm thấy lịch hẹn với ID {appointment_id}")
+            payment = Payment.objects.get(pk=payment_id, payment_status='unpaid')
+            appointment = payment.appointment
+        except Payment.DoesNotExist:
             return render(request, "payment/payment.html", {
                 "title": "Thanh toán",
-                "error": "Lịch hẹn không tồn tại."
+                "error": "Không có hóa đơn chưa thanh toán với mã này."
             })
         return render(request, "payment/payment.html", {
             "title": "Thanh toán",
             "appointment": appointment,
-            "amount": payment.total_amount  # Truyền amount vào template
+            "amount": payment.total_amount,
+            "payment_type": payment.payment_type,
+            "payment": payment
         })
 
     if request.method == 'POST':
         bank_code = request.POST.get('bank_code', '')
         language = request.POST.get('language', 'vn')
         ipaddr = get_client_ip(request)
-        appointment_id = request.POST.get('appointment_id')
+        payment_id = request.POST.get('payment_id')
 
         try:
-            appointment = Appointment.objects.get(pk=appointment_id)
-        except Appointment.DoesNotExist:
+            payment = Payment.objects.get(pk=payment_id, payment_status='unpaid')
+            appointment = payment.appointment
+        except Payment.DoesNotExist:
             return render(request, "payment/payment.html", {
                 "title": "Thanh toán",
-                "error": "Lịch hẹn không tồn tại."
+                "error": "Không có hóa đơn chưa thanh toán với mã này."
             })
 
-        # Lấy hoặc tạo Payment
-        payment = Payment.objects.filter(appointment=appointment).first()
-        if not payment:
-            payment = Payment.objects.create(
-                appointment=appointment,
-                total_amount=100000,  # Giá trị mặc định, bạn có thể thay đổi
-                payment_status='unpaid'
-            )
-
-        amount = payment.total_amount  # Lấy amount từ Payment
-        order_desc = f"Thanh toán lịch hẹn #{appointment.appointment_id}"
+        amount = payment.total_amount
+        order_desc = f"Thanh toán {payment.get_payment_type_display()} cho lịch hẹn #{appointment.appointment_id}"
         order_type = "billpayment"
-
-        PaymentDetail.objects.create(
-            payment=payment,
-            service_type="deposit",
-            service_id=0,
-            service_name="Đặt cọc lịch hẹn",
-            amount=amount
-        )
 
         vnp = vnpay()
         vnp.requestData['vnp_Version'] = '2.1.0'

@@ -36,7 +36,7 @@ urlpatterns = [
     path('appointment-history/', appointment_history, name='appointment-history'),
 
 
-    # nhập OTP với user_id và mã otp
+    # nhập OTP với gmail và mã otp
     path('api/verify-otp/', VerifyOTP.as_view(), name='verify_otp'),
 
     # gửi lại OTP
@@ -56,5 +56,5 @@ urlpatterns = [
     path('refund/',views.refund, name='refund'),
 
 
-    path('payment/<int:appointment_id>/', views.payment, name='payment')
+    path('payment/<int:payment_id>/', views.payment, name='payment')
 ]

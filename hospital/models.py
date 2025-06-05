@@ -179,6 +179,7 @@ class Payment(models.Model):
         choices=[('unpaid', 'Unpaid'), ('paid', 'Paid')],
         default='unpaid'
     )
+    payment_type = models.CharField(max_length=20, choices=[('test', 'Xét nghiệm'), ('prescription', 'thuốc'), ('deposit', 'Đặt cọc')], default='deposit', blank=True, null=True)
     order_code = models.CharField(max_length=50, unique=True) 
     payment_method = models.CharField(max_length=50, blank=True, null=True)
     payment_timestamp = models.DateTimeField(auto_now_add=True)
@@ -200,9 +201,9 @@ class Payment(models.Model):
 class PaymentDetail(models.Model):
     detail_id = models.AutoField(primary_key=True)
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='details')
-    service_type = models.CharField(max_length=50)  # 'test', 'prescription', 'consultation', ...
-    service_id = models.IntegerField()              # ID của dịch vụ (ví dụ: PatientTest.id, Prescription.id)
-    service_name = models.CharField(max_length=255) # Tên dịch vụ (ví dụ: 'Xét nghiệm Ferritin')
+    service_type = models.CharField(max_length=50)  
+    service_id = models.IntegerField()             
+    service_name = models.CharField(max_length=255) 
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     detail_status = models.CharField(
         max_length=20,
